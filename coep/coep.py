@@ -5,9 +5,9 @@ function calling
 
 from multiprocessing import Condition, Queue, cpu_count
 from .producer import Producer
-from .helpers import wrap_function_in_db
-from .database import make_db, write_to_db
+from .database import *
 from scipy.optimize import fmin, minimize
+import os
 
 import pdb
 
@@ -49,9 +49,22 @@ class COEP:
         self.oproc = objprocessor
         self.ofunc = optimizer
         self.dbname = dbname
-        ####
-        # MAKE THE DB here
-        ####
+
+        # Make the database
+        if self.dbname is not None:
+            if os.path.exists(self.dbname):
+                choice = ""
+                while choice.lower() not in ['y', 'n']:
+                    choice = input("Database " + self.dbname +
+                                   " exists. Overwrite? [y/n] ")
+                if choice.lower() == 'n':
+                    self.dbname = None
+                    print("Removing database writing functionality")
+                else:
+                    print("Overwriting database")
+                    make_db(self.dbname, self.oproc, self.ofunc)
+            else:
+                make_db(self.dbname, self.oproc, self.ofunc)
 
     """
     Run a single step to get an objective function
@@ -74,9 +87,7 @@ class COEP:
     def run_step(self, params, aux_params={}, display_progress=False):
         rdata = self.oproc.process_all_data(params, display_progress)
         oval = self.oproc.calculate_objective(rdata, **aux_params)
-        #####
-        # WRITE TO DB: RAW AND VALUE
-        #####
+        write_function_call(self.dbname, params, rdata, oval)
         return oval
 
 
@@ -111,10 +122,11 @@ class COEP:
             solver_params['constraints'] = constraints
         solver_params.update(solver_settings)
 
+        # Set up the optimization in the database
+        write_optimization_initialization(self.dbname, x0, solver_params)
+
         opt_result = self.ofunc(self.run_step, x0, args, **solver_params)
 
-        #####
-        # WRITE RESULT TO DB
-        #####
+        write_optimization_result(self.dbname, opt_result)
 
         return opt_result

@@ -49,14 +49,14 @@ num_proc = 2
 
 with SimpleRegression(parameter_names, observations, num_proc) as objproc:
     x0 = np.array([0., 0., 0., 0.])
-
+    '''
     # Option 1: nelder-mead
     coep = COEP(objproc, minimize)
     o = coep.optimize(x0, solver_settings={'method': 'Nelder-Mead'}, options={'disp': True})
     print(o)
-
+    '''
     # Option 2: SPSA
-    coep = COEP(objproc, SPSA)
+    coep = COEP(objproc, SPSA, dbname="tmpdb.hdf5")
     o = coep.optimize(x0, solver_settings={'a_par': 0.0005, 'c_par': 0.1, 'xtol': 0.0000001},
                       options={'disp': True, 'savestate': 'tmpstate.json', 'maxiter': 250})
     print(o)
