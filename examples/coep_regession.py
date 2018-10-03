@@ -57,5 +57,6 @@ with SimpleRegression(parameter_names, observations, num_proc) as objproc:
 
     # Option 2: SPSA
     coep = COEP(objproc, SPSA)
-    o = coep.optimize(x0, solver_settings={'a_par': 0.0005, 'c_par': 0.1, 'xtol': 0.0000001}, options={'disp': True})
+    o = coep.optimize(x0, solver_settings={'a_par': 0.0005, 'c_par': 0.1, 'xtol': 0.0000001},
+                      options={'disp': True, 'savestate': 'tmpstate.json', 'maxiter': 250})
     print(o)

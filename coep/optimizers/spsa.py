@@ -43,6 +43,8 @@ def SPSA(func, x0, args=(), xtol=0.0001,options={},
             maxiter: int of when to stop (defaults to 1000)
             disp: bool of whether to display intermediate output
             disp_iters: int of how often to display result (after N iterations)
+            savestate: string of file location for saving intermediate states
+                (loads from this file if it exists). Saves as a JSON file
     bounds : array_like (len(x0), 2)
         optional set of (min, max) bounds for parameters
     maxgrad : float
@@ -63,7 +65,7 @@ def SPSA(func, x0, args=(), xtol=0.0001,options={},
         is the average of y_plus and y_minus
     start_iter : int
         a way of telling the function where to start -- should usually be
-        ignored but is used when restarting optimization
+        ignored but can be used when restarting optimization
 
     Returns
     -------
@@ -75,23 +77,36 @@ def SPSA(func, x0, args=(), xtol=0.0001,options={},
     maxiter = options.get('maxiter', 1000)
     disp = options.get('disp', False)
     disp_iters = options.get('disp_iters', 10)
+    savestate = options.get('savestate', None)
+
+    if savestate is not None and os.path.exists(savestate):
+        # Initialize from the saved state
+        with open(savestate, 'rU') as savefl:
+            print("Found exising state: reloading")
+            saved = json.load(savefl)
+            n_fev = {'n': saved['n_fev']}
+            n_iter = saved['n_iter']
+            saved_theta = np.array(saved['saved_theta'])
+            theta = np.array(saved['theta'])
+            n_params = theta.shape[0]
+    else:
+        # Initialize from scratch
+        n_fev = {'n': 0}
+        n_iter = start_iter
+        n_params = x0.shape[0]
+
+        theta = x0.copy()
+        if np.all(theta == 0):
+            saved_theta = np.ones(n_params)*10
+        else:
+            saved_theta = theta * 100
 
     # Make the callable loss function
-    n_fev = {'n': 0}
     def loss(ps):
         n_fev['n'] += 1
         return func(ps, *args)
 
-    # Initialize parameters
     A = maxiter / 10.
-    n_iter = start_iter
-    n_params = x0.shape[0]
-
-    theta = x0.copy()
-    if np.all(theta == 0):
-        saved_theta = np.ones(n_params)*10
-    else:
-        saved_theta = theta * 100
 
     if bounds is not None:
         assert bounds.shape == (n_params, 2), "Malformed parameter bounds"
@@ -139,6 +154,16 @@ def SPSA(func, x0, args=(), xtol=0.0001,options={},
         if callback:
             callback(saved_theta, avg_res = avg_loss)
 
+        # Save a state file if asked (for easy recovery)
+        if savestate is not None:
+            with open(savestate, 'w') as savefl:
+                json.dump({
+                    'n_fev': n_fev['n'],
+                    'n_iter': n_iter,
+                    'saved_theta': saved_theta.tolist(),
+                    'theta': theta.tolist()
+                }, savefl)
+
     if theta_diff <= xtol:
         rmess = "Stopped due to parameter change being below threshold ("
         rmess += str(theta_diff) + " vs " + str(xtol) + ")"
@@ -153,4 +178,7 @@ def SPSA(func, x0, args=(), xtol=0.0001,options={},
                          nit=n_iter, nfev=n_fev['n'],
                          success=True,
                          status=0, message=rmess)
+    # Remove the saved state if it exists
+    if savestate is not None and os.path.exists(savestate):
+        os.remove(savestate)
     return opt
