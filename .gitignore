@@ -1,0 +1,6 @@
+*.pyc
+*.pyo
+build/
+*.DS_Store
+.idea/
+scratch*
