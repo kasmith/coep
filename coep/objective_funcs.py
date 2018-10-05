@@ -32,7 +32,8 @@ class ObjectiveProcessor:
         self.pm = ProducerManager(self.process_data, self.n_proc,
                                   self.initialize_process, True)
 
-    def process_all_data(self, fitting_params, display_progress=False):
+    def process_all_data(self, fitting_params, display_progress=False,
+                         hard_error=False):
         assert len(fitting_params) == len(self.pnames), "Malformed parameters"
         # Make the parameters to feed into the ProducerManager
         this_batch = []
@@ -46,7 +47,8 @@ class ObjectiveProcessor:
             b.update(self.aux_proc)
             this_batch.append(b)
         # Run in a parallelized fashion
-        processed = self.pm.run_batch(this_batch, display_progress)
+        processed = self.pm.run_batch(this_batch, display_progress,
+                                      hard_error=hard_error)
         # Clean up the return to include only the instance set parameters
         ret = []
         strip_names = self.pnames + list(self.aux_proc.keys())

@@ -52,8 +52,8 @@ class Producer(Process):
         #assert all([type(c) == Condition for c in conds])
         self._f = func
         self._init = initialization
-        self._set_q, self._get_q = queues
-        self._set_cond, self._get_cond = conds
+        self._set_q, self._get_q, self._err_q = queues
+        self._set_cond, self._get_cond, self._err_cond = conds
         self._stop = Event()
         self._seed = seed
 
@@ -89,16 +89,27 @@ class Producer(Process):
 
             # If we got params, deal with it
             if params is not None:
-                # Run the function on the parameters & preprocessed data
-                uparams = params.copy()
-                uparams.update(preproc_data)
-                ret = (params, self._f(**uparams))
+                # Wrap in try to catch any errors
+                try:
+                    # Run the function on the parameters & preprocessed data
+                    uparams = params.copy()
+                    uparams.update(preproc_data)
+                    ret = (params, self._f(**uparams))
 
-                # Put the results back onto the queue
-                self._get_cond.acquire()
-                self._get_q.put(ret)
-                self._get_cond.notify()
-                self._get_cond.release()
+                    # Put the results back onto the queue
+                    self._get_cond.acquire()
+                    self._get_q.put(ret)
+                    self._get_cond.notify()
+                    self._get_cond.release()
+                # Handle errors that happen
+                except Exception as err:
+                    self._err_cond.acquire()
+                    newerr = type(err)("Error encountered with parameters:\n" +
+                                       str(params) + "\n" +
+                                       str(err))
+                    self._err_q.put((params, newerr))
+                    self._err_cond.notify()
+                    self._err_cond.release()
 
             # Close down if needed
             if self._stop.is_set():
@@ -139,8 +150,10 @@ class ProducerManager:
         self.m = Manager()
         self.qin = self.m.Queue()
         self.qout = self.m.Queue()
+        self.qerr = self.m.Queue()
         self.cin = self.m.Condition()
         self.cout = self.m.Condition()
+        self.cerr = self.m.Condition()
         self.plist = []
         self._runnable = True
         for _ in range(n_producers):
@@ -148,15 +161,18 @@ class ProducerManager:
                 r = int.from_bytes(os.urandom(4), sys.byteorder)
             else:
                 r = None
-            newp = Producer(func, initialization, [self.qin, self.qout],
-                            [self.cin, self.cout], seed=r)
+            newp = Producer(func, initialization,
+                            [self.qin, self.qout, self.qerr],
+                            [self.cin, self.cout, self.cerr],
+                            seed=r)
             self.plist.append(newp)
             newp.start()
 
     def __del__(self):
         self.shut_down()
 
-    def run_batch(self, params, display_progress=True, waittime=0.1):
+    def run_batch(self, params, display_progress=True, waittime=0.1,
+                  hard_error=True):
         """
         Runs a set of parameters through the Producers
 
@@ -173,6 +189,9 @@ class ProducerManager:
         waittime : float
             Time in seconds between checking for updates to the output queue.
             Lower values can cause slowdowns. Defaults to 0.1s
+        hard_error : bool, optional
+            Defines whether an error in the subprocess should crash the
+            full run. Defaults to True. If False, assigns None to the result
 
         Returns
         -------
@@ -198,6 +217,17 @@ class ProducerManager:
                 rlist.append(self.qout.get())
             self.cout.notify()
             self.cout.release()
+            # Look for errors
+            self.cerr.acquire()
+            if not self.qerr.empty():
+                err = self.qerr.get()
+                if hard_error:
+                    raise err[1]
+                else:
+                    print('Error found:', str(err[1]))
+                    rlist.append((err[0], None))
+            self.cerr.notify()
+            self.cerr.release()
             if display_progress:
                 progress_bar(len(rlist), n_params)
             time.sleep(waittime)
