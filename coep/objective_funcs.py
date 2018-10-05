@@ -32,7 +32,7 @@ class ObjectiveProcessor:
         self.pm = ProducerManager(self.process_data, self.n_proc,
                                   self.initialize_process, True)
 
-    def process_all_data(self, fitting_params, display_progress=False,
+    def process_all_data(self, fitting_params, display_progress="none",
                          hard_error=False):
         assert len(fitting_params) == len(self.pnames), "Malformed parameters"
         # Make the parameters to feed into the ProducerManager

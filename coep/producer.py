@@ -171,7 +171,7 @@ class ProducerManager:
     def __del__(self):
         self.shut_down()
 
-    def run_batch(self, params, display_progress=True, waittime=0.1,
+    def run_batch(self, params, display_progress="none", waittime=0.1,
                   hard_error=True):
         """
         Runs a set of parameters through the Producers
@@ -183,9 +183,9 @@ class ProducerManager:
         params : list-like
             A list of parameter sets that will be run individually through the
             Producers
-        display_progress : bool
-            Show a bar in the terminal with progress through the parameters.
-            Defaults to True
+        display_progress : string
+            Shows progress (if not "none"). Allows "bar" (displays terminal
+            bar) or "remaining" (prints the remaining instances)
         waittime : float
             Time in seconds between checking for updates to the output queue.
             Lower values can cause slowdowns. Defaults to 0.1s
@@ -201,6 +201,7 @@ class ProducerManager:
         """
         # Check that we haven't shut down
         assert self._runnable, "Cannot run_batch on shut down ProducerManager"
+        assert display_progress in ['none', 'bar', 'remaining']
         # Shove everything into the queue
         n_params = len(params)
         self.cin.acquire()
@@ -211,6 +212,7 @@ class ProducerManager:
 
         # Set up return and keep checking the queue
         rlist = []
+        last_listlen = 0
         while len(rlist) < n_params:
             self.cout.acquire()
             while not self.qout.empty():
@@ -228,8 +230,14 @@ class ProducerManager:
                     rlist.append((err[0], None))
             self.cerr.notify()
             self.cerr.release()
-            if display_progress:
+            if display_progress == 'bar':
                 progress_bar(len(rlist), n_params)
+            elif display_progress == 'remaining':
+                if len(rlist) != last_listlen:
+                    last_listlen = len(rlist)
+                    exist_ps = [r[0] for r in rlist]
+                    printlist = [p for p in params if p not in exist_ps]
+                    print(printlist)
             time.sleep(waittime)
         return rlist
 
