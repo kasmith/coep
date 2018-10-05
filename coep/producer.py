@@ -237,7 +237,7 @@ class ProducerManager:
                     last_listlen = len(rlist)
                     exist_ps = [r[0] for r in rlist]
                     printlist = [p for p in params if p not in exist_ps]
-                    print(printlist)
+                    print(printlist,'\n\n')
             time.sleep(waittime)
         return rlist
 
