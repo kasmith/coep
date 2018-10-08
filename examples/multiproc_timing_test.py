@@ -15,6 +15,15 @@ class Sleeper(ObjectiveProcessor):
         time.sleep(to_sleep)
         return to_sleep
 
+class Cruncher(ObjectiveProcessor):
+    def process_data(self, x, i):
+        numc = 1 + x + i/100 + 1*random.random()
+        numc *= 100000000
+        numc = int(numc)
+        stime = time.time()
+        [1.5 / 3.2 for _ in range(numc)]
+        return time.time() - stime
+
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
@@ -30,7 +39,7 @@ if __name__ == '__main__':
     parameter_names = ['x']
     observations = [{'i': 1} for i in range(num_obs)]
 
-    with Sleeper(parameter_names, observations, num_proc) as objproc:
+    with Cruncher(parameter_names, observations, num_proc) as objproc:
         start_time = time.time()
         proc_dat = objproc.process_all_data([1], "bar")
         tot_time = time.time() - start_time
