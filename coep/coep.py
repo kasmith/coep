@@ -123,10 +123,12 @@ class COEP:
         solver_params.update(solver_settings)
 
         # Set up the optimization in the database
-        write_optimization_initialization(self.dbname, x0, solver_params)
+        if self.dbname is not None:
+            write_optimization_initialization(self.dbname, x0, solver_params)
 
         opt_result = self.ofunc(self.run_step, x0, args, **solver_params)
 
-        write_optimization_result(self.dbname, opt_result)
+        if self.dbname is not None:
+            write_optimization_result(self.dbname, opt_result)
 
         return opt_result
