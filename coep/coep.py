@@ -84,7 +84,7 @@ class COEP:
     -------
     A single objective function. Also writes output to the db in the process
     """
-    def run_step(self, params, aux_params={}, display_progress=False):
+    def run_step(self, params, aux_params={}, display_progress="none"):
         rdata = self.oproc.process_all_data(params, display_progress)
         oval = self.oproc.calculate_objective(rdata, **aux_params)
         write_function_call(self.dbname, params, rdata, oval)
