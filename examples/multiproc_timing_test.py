@@ -28,7 +28,7 @@ if __name__ == '__main__':
         num_proc = 2
 
     parameter_names = ['x']
-    observations = [{'i': i} for i in range(num_obs)]
+    observations = [{'i': 1} for i in range(num_obs)]
 
     with Sleeper(parameter_names, observations, num_proc) as objproc:
         start_time = time.time()
