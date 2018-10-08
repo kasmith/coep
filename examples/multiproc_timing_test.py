@@ -36,6 +36,6 @@ if __name__ == '__main__':
         tot_time = time.time() - start_time
         print("Ends at:", tot_time)
         core_time = sum([o[1] for o in proc_dat])
-        print(proc_dat)
         print("Total core sleeping:", core_time)
         print("Efficiency:", core_time / tot_time)
+        print("Relative efficiency:", (core_time/tot_time) / num_proc)
