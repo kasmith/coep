@@ -21,7 +21,7 @@ __all__ = ['SPSA']
 
 def SPSA(func, x0, args=(), xtol=0.0001,options={},
          bounds=None, maxgrad=None, a_par=1e-6, c_par=0.01, alpha=0.602,
-         gamma=0.101, callback=None, start_iter=0):
+         gamma=0.101, A=None, callback=None, start_iter=0):
     """
     Optimize with Simultaneous Perturbation Stochasitc Optimization
 
@@ -59,6 +59,9 @@ def SPSA(func, x0, args=(), xtol=0.0001,options={},
         gain control for a_par. Defaults to 0.602 (as per Spall, 2000)
     gamma : float
         gain control for c_par. Defaults to 0.101 (as per Spall, 2000)
+    A : float
+        Controller for chane in parameters (adjustment to a_par). Defaults to
+        maxiter / 10 (as per Spall, 2000)
     callback : function
         optional function that is called after each iteration. uses the call
         callback(xr, avg_res) where xr is the parameter vector and avg_res
@@ -106,7 +109,8 @@ def SPSA(func, x0, args=(), xtol=0.0001,options={},
         n_fev['n'] += 1
         return func(ps, *args)
 
-    A = maxiter / 10.
+    if A is None:
+        A = maxiter / 10.
 
     if bounds is not None:
         assert bounds.shape == (n_params, 2), "Malformed parameter bounds"
