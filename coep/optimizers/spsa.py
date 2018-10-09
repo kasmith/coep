@@ -156,7 +156,7 @@ def SPSA(func, x0, args=(), xtol=0.0001,options={},
             print("Avg loss:", avg_loss)
             print("")
         if callback:
-            callback(saved_theta, avg_res = avg_loss)
+            callback(saved_theta, avg_loss)
 
         # Save a state file if asked (for easy recovery)
         if savestate is not None:

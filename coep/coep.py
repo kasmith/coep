@@ -92,6 +92,12 @@ class COEP:
 
 
     """
+    Callback to pass to solver to record data
+    """
+    def _solver_cb(self, params, result=None):
+        write_solver_iteration(self.dbname, params, result)
+
+    """
     Run the optimization
 
     Parameters
@@ -126,7 +132,8 @@ class COEP:
         if self.dbname is not None:
             write_optimization_initialization(self.dbname, x0, solver_params)
 
-        opt_result = self.ofunc(self.run_step, x0, args, **solver_params)
+        opt_result = self.ofunc(self.run_step, x0, args,
+                                callback=self._solver_cb, **solver_params)
 
         if self.dbname is not None:
             write_optimization_result(self.dbname, opt_result)

@@ -11,7 +11,8 @@ import os
 import numpy as np
 
 __all__ = ['make_db', 'write_optimization_initialization',
-           'write_function_call', 'write_optimization_result']
+           'write_function_call', 'write_optimization_result',
+           'write_solver_iteration']
 
 def make_db(dbname, objproc, solve_func):
     """Makes the database
@@ -80,6 +81,8 @@ def write_optimization_initialization(dbname, x0, options):
         g_fc = g_newopt.create_group('FunctionCalls')
         g_fc['CurCall'] = 0
         g_newopt.create_group('OptimizationResult')
+        g_sr = g_newopt.create_group('SolverResults')
+        g_sr['SolveIter'] = 0
 
 
 def write_function_call(dbname, params, processed_data, objective_val):
@@ -107,6 +110,32 @@ def write_function_call(dbname, params, processed_data, objective_val):
         _write_nested_list(g_fc.create_group("ProcessedData"), processed_data)
         g_fc['Objective'] = objective_val
         g_curopt['FunctionCalls/CurCall'][...] = fcall_num + 1
+
+
+def write_solver_iteration(dbname, params, result):
+    """
+    Writes an individual solver iteration to the database (from optimizer
+    callbacks)
+
+    Parameters
+    ----------
+    dbname : string
+        File path of the database
+    params : 1-d array
+        The parameters at the end of this solver iteration
+    result : number
+        The objective value passed to the callback
+    """
+    with h5py.File(dbname, 'r+') as f:
+        g_on = f['OptimizationRuns/CurrentOptRun']
+        opt_num = g_on.value
+        g_curopt = f['OptimizationRuns'][str(opt_num)]
+        sit_num = g_curopt['SolverResults/SolveIter'].value
+        g_fc = g_curopt['SolverResults'].create_group(str(sit_num))
+        g_fc['Parameters'] = params
+        g_fc['Result'] = result
+        g_curopt['SolverResults/SolveIter'][...] = sit_num + 1
+
 
 def write_optimization_result(dbname, opt_result):
     """
