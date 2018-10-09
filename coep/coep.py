@@ -8,6 +8,7 @@ from .producer import Producer
 from .database import *
 from scipy.optimize import fmin, minimize
 import os
+import time
 
 import pdb
 
@@ -21,6 +22,9 @@ def _sum_func(dat):
         tot += obj
     return tot
 
+def _empty_post_cb(params, rdata, oval, oproc):
+    return
+
 class COEP:
     """
     Constrained Optimiation with Embarassing Parallelism
@@ -29,7 +33,8 @@ class COEP:
     an embarassiingly parallel function call.
     """
 
-    def __init__(self, objprocessor, optimizer=minimize, dbname=None):
+    def __init__(self, objprocessor, optimizer=minimize, dbname=None,
+                 poststep_cb=_empty_post_cb):
         """
         Start up the COEP object
 
@@ -44,11 +49,14 @@ class COEP:
         dbname : string
             Filepath to a database to write to. Defaults to None. If db does
             not yet exist, creates it
-
+        poststep_cb : function, optional
+            Optional function that is run after each function step, getting the
+            arguments (new parameters, processed data, objective value, oproc)
         """
         self.oproc = objprocessor
         self.ofunc = optimizer
         self.dbname = dbname
+        self.post_cb = poststep_cb
 
         # Make the database
         if self.dbname is not None:
@@ -85,9 +93,12 @@ class COEP:
     A single objective function. Also writes output to the db in the process
     """
     def run_step(self, params, aux_params={}, display_progress="none"):
+        starttime = time.time()
         rdata = self.oproc.process_all_data(params, display_progress)
         oval = self.oproc.calculate_objective(rdata, **aux_params)
-        write_function_call(self.dbname, params, rdata, oval)
+        runtime = time.time() - starttime
+        write_function_call(self.dbname, params, rdata, oval, str(runtime))
+        self.post_cb(params, rdata, oval, self.oproc)
         return oval
 
 
