@@ -12,7 +12,7 @@ import numpy as np
 
 __all__ = ['make_db', 'write_optimization_initialization',
            'write_function_call', 'write_optimization_result',
-           'write_solver_iteration']
+           'write_solver_iteration', 'write_function_aux']
 
 def make_db(dbname, objproc, solve_func):
     """Makes the database
@@ -85,7 +85,8 @@ def write_optimization_initialization(dbname, x0, options):
         g_sr['SolveIter'] = 0
 
 
-def write_function_call(dbname, params, processed_data, objective_val):
+def write_function_call(dbname, params, processed_data, objective_val,
+                        timestring=None):
     """
     Writes the results of a function call to the current pointer
 
@@ -99,6 +100,8 @@ def write_function_call(dbname, params, processed_data, objective_val):
         List of [{INSTANCE}, OUTCOME] from process_all_data
     objective_val : number
         The objective value from calculate_objective
+    timestring : str
+        A string with a timestamp for the runtime
     """
     with h5py.File(dbname, 'r+') as f:
         g_on = f['OptimizationRuns/CurrentOptRun']
@@ -110,7 +113,34 @@ def write_function_call(dbname, params, processed_data, objective_val):
         _write_nested_list(g_fc.create_group("ProcessedData"), processed_data)
         g_fc['Objective'] = objective_val
         g_curopt['FunctionCalls/CurCall'][...] = fcall_num + 1
+        if timestring is not None:
+            g_fc['RunTime'] = timestring
 
+
+def write_function_aux(dbname, dict_to_write, func_idx=None):
+    """
+    Write auxiliary function information to the last function call data
+
+    Parameters
+    ----------
+    dbname : string
+        File path of the database
+    dict_to_write : dict
+        A dictionary containing (key, value) information to write into the db
+    func_idx : int, optional
+        The index of the function call to write to. If not give, defaults to
+        the last one written
+    """
+    with h5py.File(dbname, 'r+') as f:
+        g_on = f['OptimizationRuns/CurrentOptRun']
+        opt_num = g_on.value
+        g_curopt = f['OptimizationRuns'][str(opt_num)]
+        fcall_num = g_curopt['FunctionCalls/CurCall'].value
+        assert fcall_num > 0, "Cannot write function aux if no function writes"
+        if func_idx is None:
+            func_idx = fcall_num - 1
+        g_fc = g_curopt['FunctionCalls'][str(func_idx)]
+        _write_nested_dict(g_fc.create_group("AuxData"), dict_to_write)
 
 def write_solver_iteration(dbname, params, result):
     """
