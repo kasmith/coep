@@ -3,10 +3,8 @@ The COEP class is used as the controller for all of the optimization and
 function calling
 """
 
-from multiprocessing import Condition, Queue, cpu_count
-from .producer import Producer
 from .database import *
-from scipy.optimize import fmin, minimize
+from scipy.optimize import minimize
 import os
 import time
 

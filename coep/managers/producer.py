@@ -4,7 +4,8 @@ Holds the class that persists as a subprocess and waits for inputs to process
 
 from multiprocessing import Process, Condition, Event, Queue, Manager
 import multiprocessing
-from .helpers import progress_bar
+from ..helpers import progress_bar
+from .core import ProcManager, _empty_func
 import numpy as np
 import sys
 import os
@@ -13,12 +14,7 @@ import warnings
 
 import pdb
 
-__all__ = ['Producer']
-
-
-def _empty_func():
-    """Default initialization function"""
-    return {}
+__all__ = ['Producer', 'ProducerManager']
 
 class Producer(Process):
     """
@@ -125,12 +121,12 @@ class Producer(Process):
         self._stop.set()
 
 
-class ProducerManager:
+class ProducerManager(ProcManager):
     """
     A holder for a set of producers and a communications pipeline for pushing parameters on and reading them off
     """
 
-    def __init__(self, func, n_producers, initialization=_empty_func,
+    def __init__(self, func, n_proc, initialization=None,
                  set_random=True):
         """
         Initialize and start up all of the producers
@@ -139,7 +135,7 @@ class ProducerManager:
         ----------
         func : function
             The function that the Producers will run on the parameters
-        n_producers : int
+        n_proc : int
             The number of producers to make
         initialization : function
             The function that is run to start up the Producer. Defaults to an
@@ -147,6 +143,9 @@ class ProducerManager:
         set_random : bool
             Ensures the Producer processes get seeded for randomness (from os)
         """
+        if initialization is None:
+            initialization = _empty_func
+        super().__init__(func, n_proc)
         self.m = Manager()
         self.qin = self.m.Queue()
         self.qout = self.m.Queue()
@@ -155,8 +154,7 @@ class ProducerManager:
         self.cout = self.m.Condition()
         self.cerr = self.m.Condition()
         self.plist = []
-        self._runnable = True
-        for _ in range(n_producers):
+        for _ in range(n_proc):
             if set_random:
                 r = int.from_bytes(os.urandom(4), sys.byteorder)
             else:
@@ -168,11 +166,8 @@ class ProducerManager:
             self.plist.append(newp)
             newp.start()
 
-    def __del__(self):
-        self.shut_down()
-
-    def run_batch(self, params, display_progress="none", waittime=0.1,
-                  hard_error=True):
+    def run_batch(self, params, display_progress="none", hard_error=True,
+                  waittime=0.1):
         """
         Runs a set of parameters through the Producers
 
@@ -186,12 +181,12 @@ class ProducerManager:
         display_progress : string
             Shows progress (if not "none"). Allows "bar" (displays terminal
             bar) or "remaining" (prints the remaining instances)
-        waittime : float
-            Time in seconds between checking for updates to the output queue.
-            Lower values can cause slowdowns. Defaults to 0.1s
         hard_error : bool, optional
             Defines whether an error in the subprocess should crash the
             full run. Defaults to True. If False, assigns None to the result
+        waittime : float
+            Time in seconds between checking for updates to the output queue.
+            Lower values can cause slowdowns. Defaults to 0.1s
 
         Returns
         -------

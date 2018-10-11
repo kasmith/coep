@@ -9,7 +9,7 @@ that data from the model is cheaper and doesn't require parallelization
 All models used in the COEP optimizer should inheret from this class, and
 """
 
-from .producer import ProducerManager
+from .managers import ProducerManager, DaskManager
 import time
 
 class ObjectiveProcessor:
@@ -18,19 +18,49 @@ class ObjectiveProcessor:
     """
 
     def __init__(self, parameter_names, instance_set, num_processes,
-                 aux_process_params={}):
+                 use_init=False, aux_process_params={},
+                 manager_type="dask", dask_cluster=None):
         """
         Initialize the ObjectiveProcessor
 
-        Starts up a ProducerManager that runs the
+        Starts up a ProcManager to handle parallelization
+
+        Parameters
+        ----------
+        parameter_names : list of strings
+            The names of the parameters that will get passed to the
+            optimization function
+        instance_set : list of parameter dictionaries
+            A set of parameters that will be run with the same optimization
+            parameters (e.g., trial names)
+        num_processes : int
+            The number of processes to spread parallalelization across
+        use_init : bool, optional
+            Should we feed the initialization function through? Defaults to
+            False; should be turned on automatically by any extending class
+            that overwrites the initialize_process method
+        aux_process_params : dict, optional
+            Auxiliary parameters that get passed to the function when
+            processing data. Defaults to {}
+        manager_type : ['dask', 'producer'], optional
+            Which type of manager to use defaults to 'dask'
+        dask_cluster : dask_jobqueue cluster type
+            Only used if using a DaskManager. Defaults to LocalCluster()
         """
         self.n_proc = num_processes
         self.instance_set = instance_set
         self.pnames = parameter_names
         self.aux_proc = aux_process_params
 
-        self.pm = ProducerManager(self.process_data, self.n_proc,
-                                  self.initialize_process, True)
+        if not use_init:
+            self.initialize_process = None
+
+        if manager_type == 'producer':
+            self.pm = ProducerManager(self.process_data, self.n_proc,
+                                      self.initialize_process, True)
+        else:
+            self.pm = DaskManager(self.process_data, self.n_proc,
+                                  self.initialize_process, dask_cluster)
 
     def process_all_data(self, fitting_params, display_progress="none",
                          hard_error=False):
