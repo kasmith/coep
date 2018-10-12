@@ -41,7 +41,8 @@ class ObjectiveProcessor:
 
     def __init__(self, process_func, objective_func, fit_parameter_names,
                  instance_set, num_processes, aux_process_params={},
-                 aux_obj_params={}, manager_type="dask", dask_cluster=None):
+                 aux_obj_params={}, fit_param_transform=None,
+                 manager_type="dask", dask_cluster=None):
         """
         Initialize the ObjectiveProcessor
 
@@ -70,6 +71,11 @@ class ObjectiveProcessor:
         aux_obj_params : dict, optional
             Auxiliary parameters that get passed to the objective function.
             Defaults to {}
+        fit_param_transform : function, optional
+            A function that takes in two arguments: a list of parameter values
+            and the fit_parameter_names and returns a list of transformed
+            parameter values. This is used to help stabilize optimization.
+            Defaults to doing nothing
         manager_type : ['dask'], optional
             Which type of manager to use defaults to 'dask'. Currently only
             allows 'dask'
@@ -81,6 +87,8 @@ class ObjectiveProcessor:
         self.pnames = fit_parameter_names
         self.aux_proc = aux_process_params
         self.aux_obj = aux_obj_params
+
+        self.param_transform = fit_param_transform
 
         self.proc_f = process_func
         self.obj_f = objective_func
@@ -95,6 +103,9 @@ class ObjectiveProcessor:
                          hard_error=False):
         assert len(fitting_params) == len(self.pnames), "Malformed parameters"
         # Make the parameters to feed into the ProducerManager
+        if self.param_transform is not None:
+            fitting_params = self.param_transform(fitting_params,
+                                                  self.pnames)
         this_batch = []
         parameter_set = dict(zip(self.pnames, fitting_params))
         for inst in self.instance_set:
