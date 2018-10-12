@@ -44,11 +44,6 @@ class DaskManager(ProcManager):
         #import pdb; pdb.set_trace()
         if cluster is None:
             cluster = LocalCluster()
-        else:
-            # Find the scaling factor
-            cluster_proc = self.cluster.worker_processes
-            cscale = int(np.ceil(n_proc / cluster_proc))
-            cluster.scale(cscale)
         self.cluster = cluster
         self.client = Client(cluster)
         self.fh = FunctionHolder(func)
