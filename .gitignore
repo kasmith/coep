@@ -5,3 +5,4 @@ build/
 .idea/
 scratch*
 tmp*
+dask-worker-space
