@@ -25,7 +25,7 @@ class DaskManager(ProcManager):
     A holder for functions that get parallelized via Dask
     """
 
-    def __init__(self, func, n_proc, initialization=None, cluster=None):
+    def __init__(self, func, n_proc, cluster=None):
         """
         Initialize and set up Dask
 
@@ -35,23 +35,12 @@ class DaskManager(ProcManager):
             The function to parallelize
         n_proc : int
             The number of processes
-        initialization : function
-            A function run before func. Not strictly necessary here -- only
-            saves computation with ProducerManagers
         cluster: dask_jobqueue cluster
             The cluster to run on. Must be dask.distrbuted.LocalCluster() or
             a cluster from dask_jobqueue. Defaults to the LocalCluster
         """
-        if initialization is not None:
-            def ufunc(params):
-                ipars = initialization()
-                params = params.copy()
-                params.update(ipars)
-                return func(**params)
-        else:
-            ufunc = func
 
-        super().__init__(ufunc, n_proc)
+        super().__init__(func, n_proc)
         #import pdb; pdb.set_trace()
         if cluster is None:
             cluster = LocalCluster()
@@ -62,7 +51,7 @@ class DaskManager(ProcManager):
             cluster.scale(cscale)
         self.cluster = cluster
         self.client = Client(cluster)
-        self.fh = FunctionHolder(ufunc)
+        self.fh = FunctionHolder(func)
 
     def run_batch(self, params, display_progress="none", hard_error=True):
         """
@@ -94,18 +83,13 @@ class DaskManager(ProcManager):
         bag = dbag.from_sequence(params)
 
         fh = self.fh
-        rlist = bag.map(delayed(fh))
-
-        if display_progress == 'none':
-            import pdb; pdb.set_trace()
-            #rlist = self.client.compute(*rlist)
-            rlist = compute(*rlist, scheduler='single-threaded')
-            #self.client.recreate_error_locally(*rlist)
-        else:
-            rlist = persist(*rlist)
+        tocalc = bag.map(delayed(fh))
+        #import pdb; pdb.set_trace()
+        rlist = persist(*tocalc)
+        if display_progress == 'bar':
             progress(rlist)
-            rlist = self.client.compute(*rlist)
-        return rlist
+        ret = compute(*rlist)
+        return ret
 
     def shut_down(self):
         """

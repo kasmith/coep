@@ -5,7 +5,7 @@ required functions
 
 from .managers import Producer, ProducerManager
 from .optimizers import SPSA
-from .objective_funcs import ObjectiveProcessor
+from .objective_funcs import ObjectiveProcessor, default_objective
 from .coep import COEP
 from .database import write_function_aux
 

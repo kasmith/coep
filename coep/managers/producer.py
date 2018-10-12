@@ -23,6 +23,7 @@ class Producer(Process):
     """
 
     def __init__(self, func, initialization, queues, conds, seed=None):
+        raise NotImplementedError("Deprecated and broken until Dask is working")
         """
         Initializes the Producer
 

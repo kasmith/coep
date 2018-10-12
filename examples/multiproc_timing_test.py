@@ -5,24 +5,25 @@ Used to test relative speed-up from multiprocessing with Producers
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..')) # Up 1 level
-from coep import ObjectiveProcessor
+from coep import ObjectiveProcessor, default_objective
 import time
 import random
 
-class Sleeper(ObjectiveProcessor):
-    def process_data(self, x, i):
-        to_sleep = 10 + x + i/10 + 10*random.random()
-        time.sleep(to_sleep)
-        return to_sleep
 
-class Cruncher(ObjectiveProcessor):
-    def process_data(self, x, i):
-        numc = 1 + x + i/100 + 1*random.random()
-        numc *= 100000000
-        numc = int(numc)
-        stime = time.time()
-        [1.5 / 3.2 for _ in range(numc)]
-        return time.time() - stime
+def sleeper(x, i):
+    to_sleep = 10 + x + i/10 + 10*random.random()
+    time.sleep(to_sleep)
+    return to_sleep
+
+
+def cruncher(x, i):
+    numc = 1 + x + i/100 + 1*random.random()
+    numc *= 100000000
+    numc = int(numc)
+    stime = time.time()
+    for _ in range(numc):
+        1.5 / 3.2
+    return time.time() - stime
 
 
 if __name__ == '__main__':
@@ -39,7 +40,10 @@ if __name__ == '__main__':
     parameter_names = ['x']
     observations = [{'i': 1} for i in range(num_obs)]
 
-    with Cruncher(parameter_names, observations, num_proc) as objproc:
+    #import pdb; pdb.set_trace()
+
+    with ObjectiveProcessor(cruncher, default_objective, parameter_names,
+                            observations, 2) as objproc:
         start_time = time.time()
         proc_dat = objproc.process_all_data([1], "bar")
         tot_time = time.time() - start_time
