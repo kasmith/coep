@@ -19,7 +19,7 @@ class FunctionHolder:
     def __call__(self, params):
         return [params, self.f(**params)]
 
-class function_maker(func):
+def function_maker(func):
     """As above, but no objects to deal with"""
     def f(params):
         return [params, func(**params)]
