@@ -202,7 +202,10 @@ def _write_nested_dict(dbgroup, write_dict):
             newg = dbgroup.create_group(k)
             _write_nested_list(newg, val)
         else:
-            dbgroup[k] = val
+            if val is not None:
+                dbgroup[k] = val
+            else:
+                dbgroup[k] = 'None'
 
 def _write_nested_list(dbgroup, write_list):
     for i, val in enumerate(write_list):
@@ -214,4 +217,7 @@ def _write_nested_list(dbgroup, write_list):
             newg = dbgroup.create_group(k)
             _write_nested_list(newg, val)
         else:
-            dbgroup[k] = val
+            if val is not None:
+                dbgroup[k] = val
+            else:
+                dbgroup[k] = 'None'
