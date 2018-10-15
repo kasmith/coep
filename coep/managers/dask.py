@@ -19,6 +19,11 @@ class FunctionHolder:
     def __call__(self, params):
         return [params, self.f(**params)]
 
+class function_maker(func):
+    """As above, but no objects to deal with"""
+    def f(params):
+        return [params, func(**params)]
+    return f
 
 class DaskManager(ProcManager):
     """
@@ -46,7 +51,7 @@ class DaskManager(ProcManager):
             cluster = LocalCluster()
         self.cluster = cluster
         self.client = Client(cluster)
-        self.fh = FunctionHolder(func)
+        self.fh = function_maker(func)
 
     def run_batch(self, params, display_progress="none", hard_error=True):
         """
@@ -100,3 +105,4 @@ class DaskManager(ProcManager):
         """
         self.cluster.close()
         self._runnable = False
+"""
