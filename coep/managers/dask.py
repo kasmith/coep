@@ -105,4 +105,3 @@ class DaskManager(ProcManager):
         """
         self.cluster.close()
         self._runnable = False
-"""
