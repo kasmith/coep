@@ -128,9 +128,12 @@ class COEP:
     -------
     A scipy OptimizeResult with the result of the optimization function
     """
-    def optimize(self, x0, args={}, bounds=None, constraints=None, options={},
+    def optimize(self, x0, args={}, bounds=None, constraints=None, options=None,
                  solver_settings={}):
-        solver_params = {'options': options}
+        if options is not None:
+            solver_params = {'options': options}
+        else:
+            solver_params = {}
         if bounds is not None:
             solver_params['bounds'] = bounds
         if constraints is not None:
