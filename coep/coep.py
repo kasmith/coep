@@ -128,7 +128,7 @@ class COEP:
     -------
     A scipy OptimizeResult with the result of the optimization function
     """
-    def optimize(self, x0, args={}, bounds=None, constraints=None, options=None,
+    def optimize(self, x0, args=None, bounds=None, constraints=None, options=None,
                  solver_settings={}):
         if options is not None:
             solver_params = {'options': options}
@@ -138,13 +138,16 @@ class COEP:
             solver_params['bounds'] = bounds
         if constraints is not None:
             solver_params['constraints'] = constraints
+        solver_params['x0'] = x0
+        if args is not None:
+            solver_params['args'] = args
         solver_params.update(solver_settings)
 
         # Set up the optimization in the database
         if self.dbname is not None:
             write_optimization_initialization(self.dbname, x0, solver_params)
 
-        opt_result = self.ofunc(self.run_step, x0, args,
+        opt_result = self.ofunc(self.run_step,
                                 callback=self._solver_cb, **solver_params)
 
         if self.dbname is not None:
