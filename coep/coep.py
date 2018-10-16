@@ -32,7 +32,7 @@ class COEP:
     """
 
     def __init__(self, objprocessor, optimizer=minimize, dbname=None,
-                 poststep_cb=_empty_post_cb):
+                 poststep_cb=_empty_post_cb, force_overwrite=False):
         """
         Start up the COEP object
 
@@ -50,6 +50,9 @@ class COEP:
         poststep_cb : function, optional
             Optional function that is run after each function step, getting the
             arguments (new parameters, processed data, objective value, oproc)
+        force_overwrite : bool, optional
+            If set to True, does not ask whether to overwrite an existing
+            database
         """
         self.oproc = objprocessor
         self.ofunc = optimizer
@@ -60,6 +63,8 @@ class COEP:
         if self.dbname is not None:
             if os.path.exists(self.dbname):
                 choice = ""
+                if force_overwrite:
+                    choice = 'y'
                 while choice.lower() not in ['y', 'n']:
                     choice = input("Database " + self.dbname +
                                    " exists. Overwrite? [y/n] ")
