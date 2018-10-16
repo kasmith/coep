@@ -9,6 +9,7 @@ import filelock
 import inspect
 import os
 import numpy as np
+from scipy.optimize import OptimizeResult
 
 __all__ = ['make_db', 'write_optimization_initialization',
            'write_function_call', 'write_optimization_result',
@@ -162,8 +163,12 @@ def write_solver_iteration(dbname, params, result):
         g_curopt = f['OptimizationRuns'][str(opt_num)]
         sit_num = g_curopt['SolverResults/SolveIter'].value
         g_fc = g_curopt['SolverResults'].create_group(str(sit_num))
-        g_fc['Parameters'] = params
-        g_fc['Result'] = result
+        if isinstance(params, OptimizeResult):
+            g_fc['Parameters'] = params.x
+            g_fc['Result'] = params.fun
+        else:
+            g_fc['Parameters'] = params
+            g_fc['Result'] = result
         g_curopt['SolverResults/SolveIter'][...] = sit_num + 1
 
 
