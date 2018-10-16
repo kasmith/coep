@@ -189,11 +189,22 @@ def write_optimization_result(dbname, opt_result):
         g_res = f['OptimizationRuns'][str(opt_num)]['OptimizationResult']
         g_res['MinVal'] = opt_result.fun
         g_res['Params'] = opt_result.x
-        g_res['Message'] = opt_result.message
-        g_res['FuncEval'] = opt_result.nfev
-        g_res['OptIters'] = opt_result.nit
-        g_res['Status'] = opt_result.status
-        #import pdb; pdb.set_trace()
+        try:
+            g_res['Message'] = opt_result.message
+        except:
+            pass
+        try:
+            g_res['FuncEval'] = opt_result.nfev
+        except:
+            pass
+        try:
+            g_res['OptIters'] = opt_result.nit
+        except:
+            pass
+        try:
+            g_res['Status'] = opt_result.status
+        except:
+            pass
         g_on[...] = opt_num + 1
 
 
