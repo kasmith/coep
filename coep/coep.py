@@ -32,7 +32,7 @@ class COEP:
     """
 
     def __init__(self, objprocessor, optimizer=minimize, dbname=None,
-                 poststep_cb=_empty_post_cb, force_overwrite=False):
+                 poststep_cb=None, force_overwrite=False):
         """
         Start up the COEP object
 
@@ -54,6 +54,8 @@ class COEP:
             If set to True, does not ask whether to overwrite an existing
             database
         """
+        if poststep_cb is None:
+            poststep_cb = _empty_post_cb
         self.oproc = objprocessor
         self.ofunc = optimizer
         self.dbname = dbname
