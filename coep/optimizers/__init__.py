@@ -7,6 +7,7 @@ Currently only includes SPSA
 """
 
 from .spsa import SPSA
+from .grid_search import grid_search
 
 
-__all__ = ['SPSA']
+__all__ = ['SPSA', 'grid_search']
