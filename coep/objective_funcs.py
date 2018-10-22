@@ -9,7 +9,7 @@ that data from the model is cheaper and doesn't require parallelization
 All models used in the COEP optimizer should inheret from this class, and
 """
 
-from .managers import ProducerManager, DaskManager
+from .managers import ProducerManager, DaskManager, SingleThreadManager
 import time
 
 def default_objective(processed_data, **aux_params):
@@ -76,9 +76,8 @@ class ObjectiveProcessor:
             and the fit_parameter_names and returns a list of transformed
             parameter values. This is used to help stabilize optimization.
             Defaults to doing nothing
-        manager_type : ['dask'], optional
-            Which type of manager to use defaults to 'dask'. Currently only
-            allows 'dask'
+        manager_type : ['dask', 'singlethread'], optional
+            Which type of manager to use defaults to 'dask'.
         dask_cluster : dask_jobqueue cluster type
             Only used if using a DaskManager. Defaults to LocalCluster()
         """
@@ -96,6 +95,8 @@ class ObjectiveProcessor:
         if manager_type == 'dask':
             self.pm = DaskManager(self.proc_f, num_processes,
                                   dask_cluster)
+        elif manager_type == 'singlethread':
+            self.pm = SingleThreadManager(self.proc_f)
         else:
             raise Exception("Illegal manager_type given: " + manager_type)
 
