@@ -6,6 +6,12 @@ def _empty_func():
     """Default initialization function"""
     return {}
 
+def function_maker(func):
+    """Wraps a function to return [params, f(params)]"""
+    def f(params):
+        return [params, func(**params)]
+    return f
+
 class ProcManager:
     """
     A holder for any Manager instance that decides how to split up
