@@ -40,7 +40,7 @@ def grid_search(func, x0, args=(), options={}, callback=None):
     for ix in x0:
         res = func(ix, *args)
         nfev += 1
-        if res is not None and res < best_res:
+        if best_res is None or res < best_res:
             best_res = res
             best_pars = ix
         if callback:
