@@ -8,7 +8,7 @@ from scipy.optimize import OptimizeResult
 __all__ = ['grid_search']
 
 
-def grid_search(func, xs, args=(), options={}, callback=None):
+def grid_search(func, x0, args=(), options={}, callback=None):
     """
     Optimize with naive grid search in a way that outputs an OptimizeResult
 
@@ -16,7 +16,7 @@ def grid_search(func, xs, args=(), options={}, callback=None):
     ----------
     func : function
         the function to optimize
-    xs : list
+    x0 : list
         a list of 1d arrays that comprise the parameters to run over the grid
     args : dict
         a list of default arguments to give to func (beyond the parameters)
@@ -37,14 +37,14 @@ def grid_search(func, xs, args=(), options={}, callback=None):
     best_pars = None
     nfev = 0
 
-    for x0 in xs:
-        res = func(x0, *args)
+    for ix in x0:
+        res = func(ix, *args)
         nfev += 1
         if res is not None and res < best_res:
             best_res = res
-            best_pars = x0
+            best_pars = ix
         if callback:
-            callback(x0, res)
+            callback(ix, res)
 
     opt = OptimizeResult(x=best_pars, fun=best_res,
                          nfev=nfev, success=True,
