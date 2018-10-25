@@ -102,7 +102,8 @@ class COEP:
         rdata = self.oproc.process_all_data(params, display_progress)
         oval = self.oproc.calculate_objective(rdata, **aux_params)
         runtime = time.time() - starttime
-        write_function_call(self.dbname, params, rdata, oval, str(runtime))
+        if self.dbname is not None:
+            write_function_call(self.dbname, params, rdata, oval, str(runtime))
         self.post_cb(params, rdata, oval, self.oproc)
         return oval
 
@@ -111,7 +112,8 @@ class COEP:
     Callback to pass to solver to record data
     """
     def _solver_cb(self, params, result=None):
-        write_solver_iteration(self.dbname, params, result)
+        if self.dbname is not None:
+            write_solver_iteration(self.dbname, params, result)
 
     """
     Run the optimization
