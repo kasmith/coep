@@ -2,6 +2,8 @@
 Defines the core ProcManager class that other managers extend from
 """
 
+from ..helpers import deadline, TimedOutExc
+
 def _empty_func():
     """Default initialization function"""
     return {}
@@ -9,7 +11,11 @@ def _empty_func():
 def function_maker(func):
     """Wraps a function to return [params, f(params)]"""
     def f(params):
-        return [params, func(**params)]
+        try:
+            r = func(**params)
+        except Exception as e:
+            r = e
+        return [params, r]
     return f
 
 class ProcManager:

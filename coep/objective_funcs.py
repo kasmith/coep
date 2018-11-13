@@ -101,7 +101,7 @@ class ObjectiveProcessor:
             raise Exception("Illegal manager_type given: " + manager_type)
 
     def process_all_data(self, fitting_params, display_progress="none",
-                         hard_error=False):
+                         hard_error=False, retry_failures=False, timeout=None):
         assert len(fitting_params) == len(self.pnames), "Malformed parameters"
         # Make the parameters to feed into the ProducerManager
         if self.param_transform is not None:
@@ -119,7 +119,9 @@ class ObjectiveProcessor:
             this_batch.append(b)
         # Run in a parallelized fashion
         processed = self.pm.run_batch(this_batch, display_progress,
-                                      hard_error=hard_error)
+                                      hard_error=hard_error,
+                                      retry_failures=retry_failures,
+                                      timeout=timeout)
         # Clean up the return to include only the instance set parameters
         ret = []
         strip_names = self.pnames + list(self.aux_proc.keys())

@@ -30,7 +30,8 @@ class SingleThreadManager(ProcManager):
         super().__init__(func, 1)
         self.fh = function_maker(func)
 
-    def run_batch(self, params, display_progress="none", hard_error=True):
+    def run_batch(self, params, display_progress="none", hard_error=True,
+                  retry_failures=False, timeout=None):
         """
         Runs a set of parameters through the Dask scheduler
 
@@ -45,6 +46,10 @@ class SingleThreadManager(ProcManager):
         hard_error : bool, optional
             Defines whether an error in the subprocess should crash the
             full run. Defaults to True. If False, assigns None to the result
+        retry_failures : bool, optional
+            On a soft error, defines whether to rerun processes that cause
+            the errors. Can be useful for quirky stochastic processes; not
+            recommended for deterministic functions. Defaults to False
 
         Returns
         -------
@@ -55,21 +60,28 @@ class SingleThreadManager(ProcManager):
         # Check that we haven't shut down
         assert display_progress in ['none', 'bar']
 
+        if timeout is not None:
+            raise NotImplementedError("timeout not yet implemented in SingleThreadManager")
+
         n_params = len(params)
         ret = []
         if display_progress == 'bar':
             progress_bar(0, n_params)
 
         for i, p in enumerate(params):
-            if hard_error:
-                ret.append(self.fh(p))
+            ps, res = self.fh(p)
+            if isinstance(res, Exception):
+                print("Error:")
+                print(res)
+                print("Parameters:")
+                print(ps)
+                print('--------------')
+                if hard_error:
+                    raise res
+                elif retry_failures:
+                    params.append(p)
             else:
-                try:
-                    ret.append(self.fh(p))
-                except Exception as e:
-                    print("Exception found")
-                    print("Parameters:", p)
-                    print("Error:", e)
+                ret.append([ps, res])
             if display_progress == 'bar':
                 progress_bar(i+1, n_params)
         return ret
