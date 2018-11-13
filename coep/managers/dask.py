@@ -104,12 +104,12 @@ class DaskManager(ProcManager):
                     ps, r = f.result()
                     if isinstance(r, Exception):
                         print("Error:")
-                        print(res)
+                        print(r)
                         print("Parameters:")
                         print(ps)
                         print('--------------')
                         if hard_error:
-                            raise res
+                            raise r
                     else:
                         ret.append([ps, r])
                 elif f.status == 'error':
@@ -131,7 +131,7 @@ class DaskManager(ProcManager):
                 # Find the stuff we still need to do
                 uparams = [p for p, r in ret]
                 missing_params = find_missing_params(params, uparams)
-                #[f.cancel() for f in rlist]
+                [f.cancel() for f in rlist]
                 print("Restarting " + str(len(missing_params)) + " parameters")
                 tocalc = [self.client.submit(fh, p, pure=False)
                           for p in missing_params]

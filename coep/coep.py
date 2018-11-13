@@ -32,7 +32,8 @@ class COEP:
     """
 
     def __init__(self, objprocessor, optimizer=minimize, dbname=None,
-                 poststep_cb=None, force_overwrite=False):
+                 poststep_cb=None, force_overwrite=False,
+                 hard_error=False, retry_failures=False, timeout=None):
         """
         Start up the COEP object
 
@@ -53,6 +54,14 @@ class COEP:
         force_overwrite : bool, optional
             If set to True, does not ask whether to overwrite an existing
             database
+        hard_error : bool, optional
+            Raise error if it comes up in process function; defaults to False
+        retry_failures : bool, optional
+            If a single function call throws an error or times out, try again?
+            Defaults to False
+        timeout : int, optional
+            How long to wait before scrapping existing calls and starting over
+            (or quitting). Defaults to no timeout
         """
         if poststep_cb is None:
             poststep_cb = _empty_post_cb
@@ -60,6 +69,10 @@ class COEP:
         self.ofunc = optimizer
         self.dbname = dbname
         self.post_cb = poststep_cb
+
+        self._he = hard_error
+        self._rf = retry_failures
+        self._to = timeout
 
         # Make the database
         if self.dbname is not None:
@@ -99,7 +112,10 @@ class COEP:
     """
     def run_step(self, params, aux_params={}, display_progress="none"):
         starttime = time.time()
-        rdata = self.oproc.process_all_data(params, display_progress)
+        rdata = self.oproc.process_all_data(params, display_progress,
+                                            hard_error=self._he,
+                                            retry_failures=self._rf,
+                                            timeout=self._to)
         oval = self.oproc.calculate_objective(rdata, **aux_params)
         runtime = time.time() - starttime
         if self.dbname is not None:
