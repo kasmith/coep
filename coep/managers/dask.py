@@ -98,7 +98,7 @@ class DaskManager(ProcManager):
             except Exception as e:
                 raise e
             running = False
-            print([f.status for f in rlist])
+            #print([f.status for f in rlist])
             for f in rlist:
                 if f.status == 'finished':
                     ps, r = f.result()
