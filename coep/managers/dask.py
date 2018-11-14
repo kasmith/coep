@@ -7,6 +7,7 @@ import dask.bag as dbag
 from dask.distributed import Client, progress, LocalCluster, wait, TimeoutError
 from .core import ProcManager, _empty_func, function_maker
 import numpy as np
+import sys
 from ..helpers import find_missing_params
 import time
 
@@ -136,6 +137,7 @@ class DaskManager(ProcManager):
                 tocalc = [self.client.submit(fh, p, pure=False)
                           for p in missing_params]
                 rlist = persist(*tocalc)
+        sys.stdout.flush() # Push everything out (helps with clusters)
         return ret
 
     def shut_down(self):
