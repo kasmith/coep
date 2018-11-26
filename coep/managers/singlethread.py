@@ -61,7 +61,7 @@ class SingleThreadManager(ProcManager):
         assert display_progress in ['none', 'bar']
 
         if timeout is not None:
-            raise NotImplementedError("timeout not yet implemented in SingleThreadManager")
+            warnings.warn("timeout not yet implemented in SingleThreadManager")
 
         n_params = len(params)
         ret = []
